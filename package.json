@@ -4,8 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:generate:model": "sequelize-cli model:generate",
+    "postdb:generate:model": "node scripts/rename-to-cjs.js",
+    "db:generate:migration": "sequelize-cli migration:generate --name",
+    "postdb:generate:migration": "node scripts/rename-to-cjs.js"
   },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
