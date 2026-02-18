@@ -1,15 +1,32 @@
-export const success_response = (res, data = {}, message = 'Success', status_code = 200) => {
+export const success_response = (
+    res,
+    { status_code = 200, message = "Success", data = null, meta = null }
+) => {
     return res.status(status_code).json({
-        status: 'success',
+        success: true,
+        status_code,
         message,
         data,
+        meta
     });
 };
 
-export const error_response = (res, error = {}, message = 'Error', status_code = 400) => {
+export const error_response = (
+    res,
+    {
+        status_code = 500,
+        message = "Something went wrong",
+        error_code = "INTERNAL_ERROR",
+        details = null
+    }
+) => {
     return res.status(status_code).json({
-        status: 'error',
+        success: false,
+        status_code,
         message,
-        errors: error,
+        error: {
+            code: error_code,
+            details
+        }
     });
 };

@@ -1,19 +1,24 @@
+import { error_response } from "../utils/response_formatter.js";
+
 export const not_found_handler = (req, res) => {
-    res.status(404).json({
-        status: 'fail',
-        message: `Route ${req.originalUrl} not found`,
+    return error_response(res, {
+        status_code: 404,
+        message: "Route not found",
+        error_code: "NOT_FOUND",
+        details: {
+            method: req.method,
+            path: req.originalUrl
+        }
     });
 };
 
 export const error_handler = (err, req, res, next) => {
     console.error(err);
 
-    const status_code = err.status_code || 500;
-    const message = err.message || 'Internal Server Error';
-
-    res.status(status_code).json({
-        status: 'error',
-        message,
-        errors: err.errors || null,
+    return error_response(res, {
+        status_code: err.status_code || 500,
+        message: err.message || "Something went wrong",
+        error_code: err.code || "INTERNAL_ERROR",
+        details: err.details || null
     });
 };
