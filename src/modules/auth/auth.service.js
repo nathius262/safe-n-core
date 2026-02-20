@@ -49,7 +49,7 @@ export const register_user_service = async (payload) => {
 export const login_user_service = async (payload) => {
     const { email, password } = payload;
 
-    const user = await User.findOne({ where: { email }, attributes: { exclude: ["password"] } });
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
         throw new AppError(
@@ -61,7 +61,7 @@ export const login_user_service = async (payload) => {
 
     const is_match = await compare_password(
         password,
-        user.password_hash
+        user.password
     );
 
     if (!is_match) {
@@ -77,5 +77,8 @@ export const login_user_service = async (payload) => {
         role: user.role
     });
 
-    return { user, token };
+    //exclude password hash from returned user object
+    user.password = undefined;
+
+    return { token };
 };
