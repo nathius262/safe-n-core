@@ -1,6 +1,7 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
+import { pathToFileURL } from "url";
 
 const router = express.Router();
 const modules_path = path.join(process.cwd(), "src/modules");
@@ -15,7 +16,8 @@ for (const module_name of module_names) {
     );
 
     if (fs.existsSync(route_file)) {
-        const module_routes = await import(route_file);
+        const file_url = pathToFileURL(route_file).href; // ✅ convert to file:// URL
+        const module_routes = await import(file_url);
         router.use(`/${module_name}`, module_routes.default);
     }
 }

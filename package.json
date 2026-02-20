@@ -11,8 +11,8 @@
     "postdb:generate:model": "node scripts/rename-to-cjs.js",
     "db:generate:migration": "sequelize-cli migration:generate --name",
     "postdb:generate:migration": "node scripts/rename-to-cjs.js",
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+    "dev": "nodemon ./src/server.js",
+    "start": "node ./src/server.js"
   },
   "type": "module",
   "keywords": [],
