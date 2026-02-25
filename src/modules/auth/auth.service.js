@@ -3,7 +3,7 @@ import { AppError } from "../../utils/app_error.js";
 import { hash_password, compare_password } from "../../utils/password.js";
 import { sign_token } from "../../utils/jwt.js";
 
-const { User } = pkg;
+const { User, UserDevice, sequelize } = pkg;
 
 export const register_user_service = async (payload) => {
     const { first_name, last_name, email, phone, password } = payload;
@@ -47,7 +47,7 @@ export const register_user_service = async (payload) => {
 };
 
 export const login_user_service = async (payload) => {
-    const { email, password } = payload;
+    const { email, password, device } = payload;
 
     const user = await User.findOne({ where: { email } });
 
@@ -59,10 +59,7 @@ export const login_user_service = async (payload) => {
         );
     }
 
-    const is_match = await compare_password(
-        password,
-        user.password
-    );
+    const is_match = await compare_password(password, user.password);
 
     if (!is_match) {
         throw new AppError(
@@ -72,13 +69,52 @@ export const login_user_service = async (payload) => {
         );
     }
 
-    const token = sign_token({
-        sub: user.id,
-        role: user.role
-    });
+    // 🔥 TRANSACTION START
+    const transaction = await sequelize.transaction();
 
-    //exclude password hash from returned user object
-    user.password = undefined;
+    try {
 
-    return { token };
+        if (device && device.installId) {
+
+            const device_data = await UserDevice.upsert(
+                {
+                    user_id: user.id,
+                    install_id: device.installId,
+                    platform: device.platform,
+                    app_package_name: device.app?.packageName,
+                    app_version: device.app?.version,
+                    build_number: device.app?.buildNumber,
+                    network_type: device.network?.type,
+                    network_isp: device.network?.isp,
+                    manufacturer: device.device?.manufacturer,
+                    brand: device.device?.brand,
+                    model: device.device?.model,
+                    device_identifier: device.device?.device,
+                    product: device.device?.product,
+                    os_version: device.os?.version,
+                    sdk_int: device.os?.sdkInt,
+                    security_patch: device.os?.securityPatch,
+                    is_physical_device: device.runtime?.isPhysicalDevice,
+                    locale: device.locale,
+                    timezone: device.timezone,
+                    first_login_at: new Date(),
+                    last_login_at: new Date()
+                },
+                { transaction }
+            );
+        }
+
+        const token = sign_token({
+            sub: user.id,
+            role: user.role
+        });
+
+        await transaction.commit();
+
+        return { token };
+
+    } catch (error) {
+        await transaction.rollback();
+        throw error;
+    }
 };
