@@ -69,15 +69,48 @@ export const login_user_service = async (payload) => {
         );
     }
 
-    // 🔥 TRANSACTION START
     const transaction = await sequelize.transaction();
 
     try {
 
         if (device && device.installId) {
 
-            const device_data = await UserDevice.upsert(
-                {
+            const existingDevice = await UserDevice.findOne({
+                where: {
+                    user_id: user.id,
+                    install_id: device.installId
+                },
+                transaction
+            });
+
+            if (existingDevice) {
+
+                // Re-login → Update metadata only
+                await existingDevice.update({
+                    platform: device.platform,
+                    app_package_name: device.app?.packageName,
+                    app_version: device.app?.version,
+                    build_number: device.app?.buildNumber,
+                    network_type: device.network?.type,
+                    network_isp: device.network?.isp,
+                    manufacturer: device.device?.manufacturer,
+                    brand: device.device?.brand,
+                    model: device.device?.model,
+                    device_identifier: device.device?.device,
+                    product: device.device?.product,
+                    os_version: device.os?.version,
+                    sdk_int: device.os?.sdkInt,
+                    security_patch: device.os?.securityPatch,
+                    is_physical_device: device.runtime?.isPhysicalDevice,
+                    locale: device.locale,
+                    timezone: device.timezone,
+                    last_login_at: new Date()
+                }, { transaction });
+
+            } else {
+
+                // First time login on this device
+                await UserDevice.create({
                     user_id: user.id,
                     install_id: device.installId,
                     platform: device.platform,
@@ -99,9 +132,9 @@ export const login_user_service = async (payload) => {
                     timezone: device.timezone,
                     first_login_at: new Date(),
                     last_login_at: new Date()
-                },
-                { transaction }
-            );
+                }, { transaction });
+
+            }
         }
 
         const token = sign_token({
