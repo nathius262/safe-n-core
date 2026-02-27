@@ -27,16 +27,11 @@ export const authenticate = (req, res, next) => {
     }
 };
 
-export const require_role = (role) => {
+export const authorize = (...roles) => {
     return (req, res, next) => {
-        if (req.user.role !== role) {
-            throw new AppError(
-                "Forbidden",
-                403,
-                "AUTH_FORBIDDEN"
-            );
+        if (!roles.includes(req.user.role)) {
+            throw new AppError("Forbidden", 403, "FORBIDDEN");
         }
-
         next();
     };
 };
