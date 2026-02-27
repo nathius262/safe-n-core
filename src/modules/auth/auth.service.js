@@ -105,7 +105,7 @@ export const login_user_service = async (payload) => {
         }
 
         const token = sign_token({
-            sub: user.id,
+            id: user.id,
             role: user.role
         });
 

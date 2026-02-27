@@ -1,15 +1,17 @@
-import { Router } from "express";
-import * as controller from "./incident.controller.js";
-import { authenticate } from '../../middlewares/auth_middleware.js';
+import express from "express";
+import {
+    trigger_sos,
+    resolve_incident,
+    cancel_incident
+} from "./incident.controller.js";
+import { authenticate } from "../../middlewares/auth_middleware.js";
 
-const router = Router();
+const router = express.Router();
 
-router.post("/", authenticate, controller.triggerSOS);
-router.post("/:id/location", authenticate, controller.addLocation);
-router.patch("/:id/resolve", authenticate, controller.resolveIncident);
+router.post("/sos", authenticate, trigger_sos);
 
-// router.get("/active", authenticate, controller.getActiveIncidents);
-// router.get("/:id", authenticate, controller.getIncidentDetails);
-// router.get("/:id/locations", authenticate, controller.getLocations);
+router.patch("/:incident_id/resolve", authenticate, resolve_incident);
+
+router.patch("/:incident_id/cancel", authenticate, cancel_incident);
 
 export default router;
