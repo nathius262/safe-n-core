@@ -19,7 +19,10 @@ module.exports = (sequelize, DataTypes) => {
   Incident.init({
     id: {
       type: DataTypes.UUID,
-      primaryKey: true
+      primaryKey: true,
+      allowNull: false,
+      defaultValue: DataTypes.UUIDV4,
+      unique: true
     },
     user_id: {
       type: DataTypes.UUID,

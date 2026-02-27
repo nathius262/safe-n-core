@@ -19,14 +19,17 @@ module.exports = (sequelize, DataTypes) => {
   IncidentLocation.init({
     id: {
       type: DataTypes.UUID,
-      primaryKey: true
+      primaryKey: true,
+      allowNull: false,
+      defaultValue: DataTypes.UUIDV4,
+      unique: true
     },
     incident_id: {
       type: DataTypes.UUID,
       allowNull: false
     },
-    latitude: DataTypes.DECIMAL,
-    longitude: DataTypes.DECIMAL,
+    latitude: DataTypes.DECIMAL(10, 8),
+    longitude: DataTypes.DECIMAL(11, 8),
     accuracy: DataTypes.FLOAT,
     recorded_at: DataTypes.DATE
   }, {
