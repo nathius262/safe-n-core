@@ -3,7 +3,10 @@ import { success_response } from "../../utils/response_formatter.js";
 import {
     trigger_sos_service,
     resolve_incident_service,
-    cancel_incident_service
+    cancel_incident_service,
+    add_incident_location_service,
+    get_incidents_service,
+    get_incident_by_id_service
 } from "./incident.service.js";
 
 /**
@@ -52,6 +55,52 @@ export const cancel_incident = async_handler(async (req, res) => {
 
     return success_response(res, {
         message: "Incident cancelled successfully",
+        data: result
+    });
+});
+
+
+/**
+ * POST /api/incidents/:incident_id/location
+ */
+export const add_incident_location = async_handler(async (req, res) => {
+
+    const result = await add_incident_location_service(
+        req.params.incident_id,
+        req.user,
+        req.body
+    );
+
+    return success_response(res, {
+        message: "Location updated successfully",
+        data: result
+    });
+});
+
+/**
+ * GET /api/incidents
+ */
+export const get_incidents = async_handler(async (req, res) => {
+
+    const result = await get_incidents_service(req.query);
+
+    return success_response(res, {
+        message: "Incidents fetched successfully",
+        data: result
+    });
+});
+
+/**
+ * GET /api/incidents/:incident_id
+ */
+export const get_incident_by_id = async_handler(async (req, res) => {
+
+    const result = await get_incident_by_id_service(
+        req.params.incident_id
+    );
+
+    return success_response(res, {
+        message: "Incident fetched successfully",
         data: result
     });
 });

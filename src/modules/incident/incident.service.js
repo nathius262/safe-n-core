@@ -139,3 +139,90 @@ export const cancel_incident_service = async (incident_id, user) => {
         status: "CANCELLED"
     };
 };
+
+/**
+ * Add Location Update (Real-Time Tracking)
+ */
+export const add_incident_location_service = async (
+    incident_id,
+    user,
+    payload
+) => {
+    const { location } = payload;
+
+    if (!location?.latitude || !location?.longitude) {
+        throw new AppError(
+            "Location is required",
+            400,
+            "LOCATION_REQUIRED"
+        );
+    }
+
+    const incident = await Incident.findByPk(incident_id);
+
+    if (!incident) {
+        throw new AppError("Incident not found", 404, "INCIDENT_NOT_FOUND");
+    }
+
+    if (incident.status !== "ACTIVE") {
+        throw new AppError("Incident is not active", 400, "INCIDENT_NOT_ACTIVE");
+    }
+
+    // USER can only update their own incident
+    if (user.role === "USER" && incident.user_id !== user.id) {
+        throw new AppError("Forbidden", 403, "FORBIDDEN");
+    }
+
+    await IncidentLocation.create({
+        incident_id,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        accuracy: location.accuracy || null,
+        recorded_at: new Date()
+    });
+
+    return {
+        incident_id,
+        location_recorded: true
+    };
+};
+
+/**
+ * Get Incidents (Operator View)
+ */
+export const get_incidents_service = async (query) => {
+
+    const { status } = query;
+
+    const where = {};
+    if (status) where.status = status;
+
+    const incidents = await Incident.findAll({
+        where,
+        order: [["created_at", "DESC"]]
+    });
+
+    return incidents;
+};
+
+/**
+ * Get Incident Details
+ */
+export const get_incident_by_id_service = async (incident_id) => {
+
+    const incident = await Incident.findByPk(incident_id, {
+        include: [
+            {
+                model: IncidentLocation,
+                as: "locations",
+                order: [["recorded_at", "ASC"]]
+            }
+        ]
+    });
+
+    if (!incident) {
+        throw new AppError("Incident not found", 404, "INCIDENT_NOT_FOUND");
+    }
+
+    return incident;
+};

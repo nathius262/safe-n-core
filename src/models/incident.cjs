@@ -14,6 +14,11 @@ module.exports = (sequelize, DataTypes) => {
       Incident.belongsTo(models.User, {
         foreignKey: 'user_id'
       });
+
+      Incident.hasMany(models.IncidentLocation, {
+        foreignKey: 'incident_id',
+        as: 'locations'
+      });
     }
   }
   Incident.init({
