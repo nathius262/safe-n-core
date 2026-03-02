@@ -1,12 +1,22 @@
 import pkg from "../../models/index.cjs";
 import { AppError } from "../../utils/app_error.js";
 
-const { Incident, sequelize } = pkg;
+const { Incident, IncidentLocation, sequelize } = pkg;
 
 /**
- * Trigger SOS (Idempotent)
+ * Trigger SOS (Idempotent + Location Capture)
  */
-export const trigger_sos_service = async (user) => {
+export const trigger_sos_service = async (user, payload) => {
+    const { location } = payload;
+
+    if (!location?.latitude || !location?.longitude) {
+        throw new AppError(
+            "Location is required",
+            400,
+            "LOCATION_REQUIRED"
+        );
+    }
+
     const transaction = await sequelize.transaction();
 
     try {
@@ -20,7 +30,6 @@ export const trigger_sos_service = async (user) => {
             transaction
         });
 
-        // ✅ Idempotent behavior (retry-safe)
         if (existing) {
             await transaction.commit();
             return {
@@ -31,11 +40,24 @@ export const trigger_sos_service = async (user) => {
             };
         }
 
-        // 2️⃣ Create new incident
+        // 2️⃣ Create Incident
         const incident = await Incident.create(
             {
                 user_id: user.id,
-                status: "ACTIVE"
+                status: "ACTIVE",
+                started_at: new Date()
+            },
+            { transaction }
+        );
+
+        // 3️⃣ Create Initial Location Record
+        await IncidentLocation.create(
+            {
+                incident_id: incident.id,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                accuracy: location.accuracy || null,
+                recorded_at: new Date()
             },
             { transaction }
         );

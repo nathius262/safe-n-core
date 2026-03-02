@@ -11,9 +11,7 @@ import {
  */
 export const trigger_sos = async_handler(async (req, res) => {
 
-    console.log('user', req.user)
-
-    const result = await trigger_sos_service(req.user);
+    const result = await trigger_sos_service(req.user, req.body);
 
     return success_response(res, {
         status_code: result.is_existing ? 200 : 201,
