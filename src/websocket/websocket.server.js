@@ -14,7 +14,10 @@ let wss;
 
 export const init_websocket = (server) => {
 
-    wss = new WebSocketServer({ server });
+    wss = new WebSocketServer({
+        server,
+        path: "/ws"
+    });
 
     wss.on("connection", (ws, req) => {
 
@@ -25,7 +28,7 @@ export const init_websocket = (server) => {
             const token = url.searchParams.get("token");
 
             if (!token) {
-                ws.close();
+                ws.close(4001, "Authentication token missing");
                 return;
             }
 
@@ -38,9 +41,10 @@ export const init_websocket = (server) => {
 
             console.log(`WebSocket connected → user ${user.id}`);
 
-            // auto subscribe user channel
+            // auto subscribe to user channel
             subscribe(ws, `user:${user.id}`);
 
+            // operators automatically join operators channel
             if (user.role === "OPERATOR") {
                 subscribe(ws, "operators");
             }
@@ -55,6 +59,9 @@ export const init_websocket = (server) => {
 
                         subscribe(ws, `incident:${data.incident_id}`);
 
+                        console.log(
+                            `User ${user.id} subscribed to incident:${data.incident_id}`
+                        );
                     }
 
                 } catch (err) {
@@ -74,7 +81,8 @@ export const init_websocket = (server) => {
         } catch (err) {
 
             console.error("WebSocket auth failed:", err.message);
-            ws.close();
+
+            ws.close(4002, "Authentication failed");
 
         }
 
