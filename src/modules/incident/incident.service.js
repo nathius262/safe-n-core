@@ -1,5 +1,6 @@
 import pkg from "../../models/index.cjs";
 import { AppError } from "../../utils/app_error.js";
+import { broadcast_location_update, broadcast_incident_resolved, broadcast_incident_created } from "../../websocket/websocket.broadcast.js";
 
 const { Incident, IncidentLocation, sequelize } = pkg;
 
@@ -64,6 +65,13 @@ export const trigger_sos_service = async (user, payload) => {
 
         await transaction.commit();
 
+        broadcast_incident_created({
+            incident_id: incident.id,
+            user_id: user.id,
+            status: incident.status,
+            started_at: incident.started_at
+        });
+
         return {
             incident_id: incident.id,
             status: incident.status,
@@ -99,6 +107,12 @@ export const resolve_incident_service = async (incident_id, user) => {
     }
 
     await incident.update({
+        status: "RESOLVED",
+        resolved_at: new Date()
+    });
+
+    broadcast_incident_resolved({
+        incident_id: incident.id,
         status: "RESOLVED",
         resolved_at: new Date()
     });
@@ -178,6 +192,13 @@ export const add_incident_location_service = async (
         latitude: location.latitude,
         longitude: location.longitude,
         accuracy: location.accuracy || null,
+        recorded_at: new Date()
+    });
+
+    broadcast_location_update({
+        incident_id,
+        latitude: location.latitude,
+        longitude: location.longitude,
         recorded_at: new Date()
     });
 
