@@ -1,27 +1,47 @@
-import { get_clients } from "./websocket.registry.js";
+import { get_channel_clients } from "./websocket.channels.js";
 
-const send = (type, payload) => {
+const send = (channel, type, payload) => {
 
     const message = JSON.stringify({
         type,
         data: payload
     });
 
-    for (const client of get_clients()) {
+    const clients = get_channel_clients(channel);
+
+    for (const client of clients) {
+
         if (client.readyState === 1) {
             client.send(message);
         }
+
     }
+
 };
 
-export const broadcast_location_update = (payload) => {
-    send("LOCATION_UPDATE", payload);
+export const broadcast_incident_created = (incident) => {
+
+    send("operators", "INCIDENT_CREATED", incident);
+    send(`user:${incident.user_id}`, "INCIDENT_CREATED", incident);
+
 };
 
-export const broadcast_incident_created = (payload) => {
-    send("INCIDENT_CREATED", payload);
+export const broadcast_location_update = (location) => {
+
+    send(`incident:${location.incident_id}`, "LOCATION_UPDATE", location);
+
 };
 
-export const broadcast_incident_resolved = (payload) => {
-    send("INCIDENT_RESOLVED", payload);
+export const broadcast_incident_resolved = (incident) => {
+
+    send(`incident:${incident.incident_id}`, "INCIDENT_RESOLVED", incident);
+    send(`user:${incident.user_id}`, "INCIDENT_RESOLVED", incident);
+
+};
+
+export const broadcast_incident_cancelled = (incident) => {
+
+    send(`incident:${incident.incident_id}`, "INCIDENT_CANCELLED", incident);
+    send(`user:${incident.user_id}`, "INCIDENT_CANCELLED", incident);
+
 };

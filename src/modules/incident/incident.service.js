@@ -1,6 +1,6 @@
 import pkg from "../../models/index.cjs";
 import { AppError } from "../../utils/app_error.js";
-import { broadcast_location_update, broadcast_incident_resolved, broadcast_incident_created } from "../../websocket/websocket.broadcast.js";
+import { broadcast_location_update, broadcast_incident_resolved, broadcast_incident_created, broadcast_incident_cancelled } from "../../websocket/websocket.broadcast.js";
 
 const { Incident, IncidentLocation, sequelize } = pkg;
 
@@ -114,6 +114,7 @@ export const resolve_incident_service = async (incident_id, user) => {
     broadcast_incident_resolved({
         incident_id: incident.id,
         status: "RESOLVED",
+        user_id: incident.user_id,
         resolved_at: new Date()
     });
 
@@ -144,6 +145,13 @@ export const cancel_incident_service = async (incident_id, user) => {
     }
 
     await incident.update({
+        status: "CANCELLED",
+        resolved_at: new Date()
+    });
+
+    broadcast_incident_cancelled({
+        incident_id: incident.id,
+        user_id: incident.user_id,
         status: "CANCELLED",
         resolved_at: new Date()
     });
