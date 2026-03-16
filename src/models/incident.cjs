@@ -37,6 +37,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('ACTIVE', 'RESOLVED', 'CANCELLED'),
       allowNull: false
     },
+    trigger_type: {
+      type: DataTypes.ENUM('ONE_TAP', 'SILENT', 'DELAYED'),
+      allowNull: false,
+      defaultValue: 'ONE_TAP'
+    },
     triggered_at: DataTypes.DATE,
     resolved_at: DataTypes.DATE,
     metadata: DataTypes.JSONB

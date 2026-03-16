@@ -8,7 +8,7 @@ const { Incident, IncidentLocation, sequelize } = pkg;
  * Trigger SOS (Idempotent + Location Capture)
  */
 export const trigger_sos_service = async (user, payload) => {
-    const { location } = payload;
+    const { location, trigger_type = "ONE_TAP" } = payload;
 
     if (!location?.latitude || !location?.longitude) {
         throw new AppError(
@@ -46,6 +46,7 @@ export const trigger_sos_service = async (user, payload) => {
             {
                 user_id: user.id,
                 status: "ACTIVE",
+                trigger_type,
                 started_at: new Date()
             },
             { transaction }
