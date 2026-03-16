@@ -142,9 +142,14 @@ export const login_user_service = async (payload) => {
             role: user.role
         });
 
+        const user_details = {
+            id: user.id,
+            first_name: user.first_name,
+            role: user.role
+        };
         await transaction.commit();
 
-        return { token };
+        return { token, user: user_details };
 
     } catch (error) {
         await transaction.rollback();
