@@ -29,6 +29,9 @@ export const broadcast_incident_created = (incident) => {
 export const broadcast_location_update = (location) => {
 
     send(`incident:${location.incident_id}`, "LOCATION_UPDATE", location);
+    send(`user:${location.user_id}`, "LOCATION_UPDATE", location);
+    // ✅ NEW: Send to operators for immediate visibility
+    send("operators", "LOCATION_UPDATE", location);
 
 };
 

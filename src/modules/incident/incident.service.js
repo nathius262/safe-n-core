@@ -1,6 +1,11 @@
 import pkg from "../../models/index.cjs";
 import { AppError } from "../../utils/app_error.js";
-import { broadcast_location_update, broadcast_incident_resolved, broadcast_incident_created, broadcast_incident_cancelled } from "../../websocket/websocket.broadcast.js";
+import {
+    broadcast_location_update,
+    broadcast_incident_resolved,
+    broadcast_incident_created,
+    broadcast_incident_cancelled
+} from "../../websocket/websocket.broadcast.js";
 
 const { Incident, IncidentLocation, sequelize } = pkg;
 
@@ -9,6 +14,7 @@ const { Incident, IncidentLocation, sequelize } = pkg;
  */
 export const trigger_sos_service = async (user, payload) => {
     const { location, trigger_type = "ONE_TAP" } = payload;
+    const recorded_at = new Date();
 
     if (!location?.latitude || !location?.longitude) {
         throw new AppError(
@@ -21,7 +27,6 @@ export const trigger_sos_service = async (user, payload) => {
     const transaction = await sequelize.transaction();
 
     try {
-
         // 1️⃣ Check existing ACTIVE incident
         const existing = await Incident.findOne({
             where: {
@@ -47,7 +52,7 @@ export const trigger_sos_service = async (user, payload) => {
                 user_id: user.id,
                 status: "ACTIVE",
                 trigger_type,
-                started_at: new Date()
+                started_at: recorded_at
             },
             { transaction }
         );
@@ -59,18 +64,27 @@ export const trigger_sos_service = async (user, payload) => {
                 latitude: location.latitude,
                 longitude: location.longitude,
                 accuracy: location.accuracy || null,
-                recorded_at: new Date()
+                recorded_at
             },
             { transaction }
         );
 
         await transaction.commit();
 
+        // 🔔 Broadcast incident created
         broadcast_incident_created({
             incident_id: incident.id,
             user_id: user.id,
             status: incident.status,
             started_at: incident.started_at
+        });
+
+        // 🔔 Broadcast initial location immediately
+        broadcast_location_update({
+            incident_id: incident.id,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            recorded_at
         });
 
         return {
@@ -107,16 +121,18 @@ export const resolve_incident_service = async (incident_id, user) => {
         throw new AppError("Forbidden", 403, "FORBIDDEN");
     }
 
+    const resolved_at = new Date();
+
     await incident.update({
         status: "RESOLVED",
-        resolved_at: new Date()
+        resolved_at
     });
 
     broadcast_incident_resolved({
         incident_id: incident.id,
         status: "RESOLVED",
         user_id: incident.user_id,
-        resolved_at: new Date()
+        resolved_at
     });
 
     return {
@@ -145,16 +161,18 @@ export const cancel_incident_service = async (incident_id, user) => {
         throw new AppError("Forbidden", 403, "FORBIDDEN");
     }
 
+    const resolved_at = new Date();
+
     await incident.update({
         status: "CANCELLED",
-        resolved_at: new Date()
+        resolved_at
     });
 
     broadcast_incident_cancelled({
         incident_id: incident.id,
         user_id: incident.user_id,
         status: "CANCELLED",
-        resolved_at: new Date()
+        resolved_at
     });
 
     return {
@@ -162,6 +180,7 @@ export const cancel_incident_service = async (incident_id, user) => {
         status: "CANCELLED"
     };
 };
+
 
 /**
  * Add Location Update (Real-Time Tracking)
@@ -172,6 +191,7 @@ export const add_incident_location_service = async (
     payload
 ) => {
     const { location } = payload;
+    const recorded_at = new Date();
 
     if (!location?.latitude || !location?.longitude) {
         throw new AppError(
@@ -201,14 +221,14 @@ export const add_incident_location_service = async (
         latitude: location.latitude,
         longitude: location.longitude,
         accuracy: location.accuracy || null,
-        recorded_at: new Date()
+        recorded_at
     });
 
     broadcast_location_update({
         incident_id,
         latitude: location.latitude,
         longitude: location.longitude,
-        recorded_at: new Date()
+        recorded_at
     });
 
     return {
@@ -216,6 +236,7 @@ export const add_incident_location_service = async (
         location_recorded: true
     };
 };
+
 
 /**
  * Get Incidents (Operator View)
@@ -234,6 +255,7 @@ export const get_incidents_service = async (query) => {
 
     return incidents;
 };
+
 
 /**
  * Get Incident Details
